@@ -1,0 +1,16 @@
+# ==============================================================================
+# GRAFANA DASHBOARDS PROVISIONING
+# Tự động nạp dashboard JSON khi Grafana khởi động
+# ==============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Project Management Dashboards'
+    orgId: 1
+    folder: 'Đề tài 14 - Project Management'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

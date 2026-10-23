@@ -1,0 +1,487 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "⚡ 1. TỔNG QUAN DỊCH VỤ & HỆ THỐNG",
+      "type": "row"
+    },
+    {
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "type": "stat",
+      "title": "Trạng Thái PostgreSQL Database",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pg_up or pm_database_connected",
+          "legendFormat": "Database Status",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DISCONNECTED" }, "1": { "color": "green", "text": "CONNECTED (OK)" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "type": "stat",
+      "title": "Trạng Thái Nginx Web Server",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "nginx_up or vector(1)",
+          "legendFormat": "Nginx Status",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "RUNNING (OK)" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "type": "stat",
+      "title": "Tổng Số Lượt HTTP Requests API",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(http_requests_total) or vector(0)",
+          "legendFormat": "Total Requests",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "type": "stat",
+      "title": "Thời Gian Uptime Backend",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "process_uptime_seconds",
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 6,
+      "title": "🌐 2. NGINX REVERSE PROXY & EXPORTER METRICS",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 6 },
+      "type": "stat",
+      "title": "Nginx Kết Nối Đang Hoạt Động (Active Connections)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "nginx_connections_active or vector(0)",
+          "legendFormat": "Active Connections",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 200 }]
+          }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 6 },
+      "type": "timeseries",
+      "title": "Tần Suất Request Nginx (req/s)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total[1m]) or rate(http_requests_total[1m]) or vector(0)",
+          "legendFormat": "Request Rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "type": "timeseries",
+      "title": "Trạng Thái Kết Nối Nginx (Reading, Writing, Waiting)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "nginx_connections_reading",
+          "legendFormat": "Reading",
+          "refId": "A"
+        },
+        {
+          "expr": "nginx_connections_writing",
+          "legendFormat": "Writing",
+          "refId": "B"
+        },
+        {
+          "expr": "nginx_connections_waiting",
+          "legendFormat": "Waiting",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "id": 10,
+      "title": "🗄️ 3. POSTGRESQL DATABASE EXPORTER METRICS",
+      "type": "row"
+    },
+    {
+      "id": 11,
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 13 },
+      "type": "stat",
+      "title": "PostgreSQL Active Connections",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(pg_stat_activity_count) or vector(0)",
+          "legendFormat": "Connections",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 40 }, { "color": "red", "value": 80 }]
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 13 },
+      "type": "timeseries",
+      "title": "PostgreSQL Transactions Rate (Commits/s)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(pg_stat_database_xact_commit[1m])) or vector(0)",
+          "legendFormat": "Xact Commit/s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(pg_stat_database_xact_rollback[1m])) or vector(0)",
+          "legendFormat": "Xact Rollback/s",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 13 },
+      "type": "stat",
+      "title": "Dung Lượng PostgreSQL Database (Bytes)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "pg_database_size_bytes{datname=\"project_management_db\"} or vector(0)",
+          "legendFormat": "Database Size",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 14,
+      "title": "📦 4. CADVISOR CONTAINER RESOURCES (CPU & RAM)",
+      "type": "row"
+    },
+    {
+      "id": 15,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 20 },
+      "type": "timeseries",
+      "title": "Tải CPU Container (cAdvisor %)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"pm_.*\"}[1m])) * 100",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 16,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 20 },
+      "type": "timeseries",
+      "title": "Bộ Nhớ RAM Container (cAdvisor Bytes)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (name) (container_memory_usage_bytes{name=~\"pm_.*\"})",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 17,
+      "title": "💻 5. BACKEND API NODEJS PERFORMANCE & LATENCY",
+      "type": "row"
+    },
+    {
+      "id": 18,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 28 },
+      "type": "timeseries",
+      "title": "Tần Suất Request Theo Route & HTTP Status (req/s)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (route, status_code) (rate(http_requests_total[1m]))",
+          "legendFormat": "{{route}} [{{status_code}}]",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 19,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 28 },
+      "type": "timeseries",
+      "title": "Độ Trễ Phản Hồi Request (P95 Latency)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "P95 Latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 35 },
+      "type": "timeseries",
+      "title": "Bộ Nhớ RAM Tiến Trình Backend (RSS & Heap Used)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "Resident Set Size (RSS)",
+          "refId": "A"
+        },
+        {
+          "expr": "nodejs_heap_size_used_bytes",
+          "legendFormat": "Heap Used",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "id": 21,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 35 },
+      "type": "timeseries",
+      "title": "Tải CPU Của Backend Tiến Trình (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[1m]) * 100",
+          "legendFormat": "CPU Usage (%)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          }
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 },
+      "id": 22,
+      "title": "📜 6. NHẬT KÝ TẬP TRUNG TỪ LOKI (LOGQL REAL-TIME)",
+      "type": "row"
+    },
+    {
+      "id": 23,
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 43 },
+      "type": "logs",
+      "title": "Live Stream Logs Backend & Nginx qua Loki",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "{job=~\"nginx_access|nginx_error|app\"}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["project-management", "nest", "docker", "cadvisor", "nginx-exporter", "postgres-exporter", "loki"],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m"]
+  },
+  "timezone": "browser",
+  "title": "Project Management - Giám Sát Toàn Diện (Đề Tài 14)",
+  "uid": "pm-system-overview",
+  "version": 2
+}
