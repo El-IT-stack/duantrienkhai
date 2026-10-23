@@ -1,0 +1,39 @@
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables & secrets (Crucial for security)
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+nginx/ssl/*.key
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker volumes and persistent data local mounts
+data/
+postgres_data/
+grafana_data/
+loki_data/
+
+# Logs
+logs/
+*.log

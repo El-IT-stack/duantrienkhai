@@ -1,0 +1,18 @@
+{
+  "name": "project-management-system",
+  "version": "1.0.0",
+  "description": "He thong Quan ly Du an (Project Management) - De tai 14",
+  "scripts": {
+    "start": "docker compose up -d --build",
+    "up": "docker compose up -d --build",
+    "stop": "docker compose down",
+    "down": "docker compose down",
+    "restart": "docker compose restart",
+    "logs": "docker compose logs -f",
+    "ps": "docker compose ps",
+    "status": "docker compose ps",
+    "clean": "docker compose down -v"
+  },
+  "author": "Hoang Xuan Doan (dtc245200226)",
+  "license": "UNLICENSED"
+}
