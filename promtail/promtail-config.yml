@@ -1,0 +1,60 @@
+# ==============================================================================
+# HỆ THỐNG QUẢN LÝ DỰ ÁN (PROJECT MANAGEMENT) - PROMTAIL CONFIGURATION
+# Mục đích: Đọc log từ Nginx và Backend rồi chuyển tiếp sang Loki
+# ==============================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: info
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 102400
+    timeout: 10s
+
+scrape_configs:
+  # 1. Thu thập Nginx Access Log (JSON Format)
+  # Cho phép LogQL:
+  #   - {job="nginx_access"}
+  #   - {job="nginx_access"} | json | status >= 400
+  - job_name: nginx_access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx_access
+          service: nginx
+          environment: production
+          __path__: /var/log/nginx/pm_access.log
+
+  # 2. Thu thập Nginx Error Log
+  # Cho phép LogQL:
+  #   - {job="nginx_error"}
+  - job_name: nginx_error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx_error
+          service: nginx
+          environment: production
+          __path__: /var/log/nginx/pm_error.log
+
+  # 3. Thu thập Backend Application Logs (JSON Format)
+  # Cho phép LogQL:
+  #   - {job="app"}
+  #   - {job="app"} | json | level="error"
+  - job_name: app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: app
+          service: backend
+          environment: production
+          __path__: /var/log/backend/*.log
