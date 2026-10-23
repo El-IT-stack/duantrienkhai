@@ -286,12 +286,13 @@ Mật khẩu chung cho toàn bộ tài khoản demo: **`Admin@123`**
 - **URL:** [http://localhost:5050](http://localhost:5050)
 - **Tài khoản:** `admin@pm.com`
 - **Mật khẩu:** `PgAdmin@2026_Secure!`
-- **Thông số kết nối Database Server trong pgAdmin:**
-  - Host name: `postgres`
-  - Port: `5432`
-  - Maintenance database: `project_management_db`
-  - Username: `postgres_admin`
-  - Password: `StrongP@ssw0rd_2026_Secure!`
+- **Kết nối Database:** Server **`Project Management DB`** đã được cấu hình tự động sẵn trong mục **Servers** ở cây thư mục bên trái (nhấp đúp chuột để kết nối và mở rộng CSDL).
+  - *Thông số kết nối (khi cần xem hoặc đăng ký lại):*
+    - Host name: `postgres`
+    - Port: `5432`
+    - Maintenance database: `project_management_db`
+    - Username: `postgres_admin`
+    - Password: `StrongP@ssw0rd_2026_Secure!`
 
 ### 3. Đăng nhập Grafana
 - **URL:** [http://localhost:3001](http://localhost:3001)

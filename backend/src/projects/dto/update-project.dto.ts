@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsIn, IsUUID, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsIn, IsDateString } from 'class-validator';
+import { IsDbUUID } from '../../common/decorators/is-db-uuid.decorator';
 
 export class UpdateProjectDto {
   @ApiPropertyOptional({ example: 'Hệ thống Quản lý Khách sạn Cloud v2' })
@@ -19,12 +20,12 @@ export class UpdateProjectDto {
 
   @ApiPropertyOptional({ example: '22222222-2222-2222-2222-222222222222' })
   @IsOptional()
-  @IsUUID('4', { message: 'managerId phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'managerId phải là UUID hợp lệ' })
   managerId?: string;
 
   @ApiPropertyOptional({ example: '22222222-2222-2222-2222-222222222222' })
   @IsOptional()
-  @IsUUID('4', { message: 'manager_id phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'manager_id phải là UUID hợp lệ' })
   manager_id?: string;
 
   @ApiPropertyOptional({ example: '2026-03-01' })

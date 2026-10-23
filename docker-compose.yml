@@ -44,6 +44,10 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pm.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-PgAdmin@2026_Secure!}
       PGADMIN_CONFIG_SERVER_MODE: 'True'
+      PGPASS_FILE: /tmp/pgpass
+    volumes:
+      - ./database/servers.json:/pgadmin4/servers.json:ro
+      - ./database/pgpass:/tmp/pgpass:ro
     networks:
       - pm_internal_network
       - pm_public_network

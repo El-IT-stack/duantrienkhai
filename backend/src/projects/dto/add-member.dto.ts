@@ -1,15 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsUUID, IsIn } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+import { IsDbUUID } from '../../common/decorators/is-db-uuid.decorator';
 
 export class AddMemberDto {
   @ApiPropertyOptional({ example: '44444444-4444-4444-4444-444444444444', description: 'ID thành viên cần thêm vào dự án' })
   @IsOptional()
-  @IsUUID('4', { message: 'userId phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'userId phải là UUID hợp lệ' })
   userId?: string;
 
   @ApiPropertyOptional({ example: '44444444-4444-4444-4444-444444444444', description: 'ID thành viên cần thêm vào dự án' })
   @IsOptional()
-  @IsUUID('4', { message: 'user_id phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'user_id phải là UUID hợp lệ' })
   user_id?: string;
 
   @ApiPropertyOptional({ example: 'MEMBER', enum: ['MANAGER', 'LEAD', 'MEMBER', 'VIEWER'] })

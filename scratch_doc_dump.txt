@@ -1,0 +1,269 @@
+[1] MỤC LỤC
+[2] 1. Giới thiệu và mục  tiêu………………………………………………
+[3] 2. Phạm vi chức năng của hệ thống……………………………………
+[4] 3. Kiến trúc tổng thể và luồng dữ liệu…………………………………
+[5] 4. Cấu trúc mã nguồn và công nghệ……………………………………
+[6] 5. Cơ sở dữ liệu PostgreSQL……………………………………………
+[7] 6. Backend NestJS và API………………………………………………
+[8] 7. Frontend React………………………………………………………
+[9] 8. Docker Compose và quy trình triển khai……………………………
+[10] 9. Nginx và bảo mật……………………………………………………
+[11] 10. Giám sát Prometheus/Grafana………………………………………
+[12] 11. Thu thập log với Loki/Promtail………………………………………
+[13] 12. Kiểm thử, kết quả chạy thử và hạn chế………………………………
+[14] 13. Đánh giá bảo mật và hướng cải tiến…………………………………
+[15] 14. Kết luận và phụ lục lệnh……………………………………………
+[17] 1. GIỚI THIỆU VÀ MỤC TIÊU
+[18] 1.1. Bối cảnh
+[19] Hệ thống Quản lý Dự án hỗ trợ quản lý dự án, theo dõi công việc, thành viên, trạng thái tiến độ và cung cấp trang tổng quan. Dự án được tổ chức theo mô hình full-stack: giao diện web React/TypeScript, API NestJS, dữ liệu PostgreSQL và lớp triển khai/giám sát bằng các container.
+[20] 1.2. Mục tiêu triển khai
+[21] Chuẩn hóa môi trường triển khai bằng Docker Compose để các thành phần có thể được khởi động theo một cấu hình thống nhất.
+[22] Đặt Nginx làm reverse proxy để định tuyến truy cập đến frontend và backend, đồng thời bổ sung một số HTTP security headers.
+[23] Lưu trữ dữ liệu nghiệp vụ trong PostgreSQL và khởi tạo cấu trúc bảng bằng script database/init.sql.
+[24] Thu thập metrics bằng Prometheus và trình bày dashboard qua Grafana.
+[25] Tập trung hóa log qua Promtail và Loki để hỗ trợ tìm kiếm, phân tích sự cố.
+[26] Xác định các rủi ro còn lại và đề xuất bước kiểm chứng trên môi trường triển khai thực tế.
+[27] 1.3. Phương pháp thực hiện
+[28] Việc rà soát dựa trên tệp ZIP đã giải nén, đọc README.md, docker-compose.yml, .env.example, các package.json, cấu hình Nginx, cấu hình Prometheus/Loki/Promtail, controller health check và script SQL. Các lệnh chạy thử được thực hiện trong môi trường làm việc hiện tại; lỗi thực tế được ghi nhận ở Chương 12.
+[29] 1.4. Phạm vi và giới hạn
+[30] Báo cáo không thay thế biên bản nghiệm thu trên máy chủ đích. Các ảnh giao diện và dashboard được ghi rõ là hình minh họa, không phải ảnh chụp một phiên hệ thống đã chạy thành công. Muốn xác nhận vận hành đầu-cuối cần cài Docker Desktop/Engine, khởi động daemon và chạy lại các phép thử.
+[32] 2. PHẠM VI CHỨC NĂNG CỦA HỆ THỐNG
+[33] 2.1. Người dùng và quyền truy cập
+[34] Script SQL định nghĩa các vai trò ADMIN, PROJECT_MANAGER và MEMBER trong bảng users. Backend có thư mục auth, guards và decorators, phù hợp với cách tiếp cận kiểm soát truy cập theo vai trò (RBAC). Quyền chi tiết của từng endpoint cần được kiểm thử theo tài khoản thực tế; không nên suy luận rằng mọi quy tắc đã được xác nhận chỉ từ tên thư mục.
+[35] 2.2. Luồng nghiệp vụ tổng quát
+[36] Người dùng mở ứng dụng và đăng nhập.
+[37] Frontend gọi REST API để tải dữ liệu dự án, công việc và thành viên.
+[38] Backend xác thực yêu cầu, xử lý nghiệp vụ và truy cập PostgreSQL.
+[39] Kết quả được trả về giao diện; metrics và log được thu thập để giám sát.
+[41] 3. KIẾN TRÚC TỔNG THỂ VÀ LUỒNG DỮ LIỆU
+[43] Hình 1. Sơ đồ kiến trúc logic dựa trên cấu hình trong tệp ZIP.
+[44] 3.1. Nhóm dịch vụ
+[45] 3.2. Luồng request
+[46] Trình duyệt truy cập Nginx. Cấu hình Nginx khai báo upstream frontend_service trỏ đến frontend:80 và backend_service trỏ đến backend:3000. Nginx định tuyến request đến đúng thành phần; backend trao đổi với PostgreSQL trong mạng Docker. Việc không publish cổng PostgreSQL ra host giúp giảm bề mặt truy cập trực tiếp.
+[47] 3.3. Luồng quan sát hệ thống
+[48] Prometheus thu thập metrics từ các target đã khai báo. Grafana dùng datasource để hiển thị chỉ số. Với log, Promtail đọc các nguồn log được mount/cấu hình và gửi tới Loki. Các thành phần quan sát cần được xác minh trạng thái target, datasource và quyền đọc log sau khi hệ thống chạy.
+[50] 4. CẤU TRÚC MÃ NGUỒN VÀ CÔNG NGHỆ
+[51] 4.1. Công nghệ
+[52] Frontend sử dụng React 18, TypeScript, Vite, React Router và Axios. Backend dùng NestJS 10, Passport/JWT, Swagger, pg và prom-client. Dữ liệu lưu trong PostgreSQL 16. Lớp triển khai sử dụng Docker Compose; Nginx phục vụ reverse proxy; Prometheus/Grafana hỗ trợ metrics và Loki/Promtail hỗ trợ log.
+[53] 4.2. Quản lý cấu hình
+[54] Tệp .env.example mô tả các biến môi trường cho database, JWT, pgAdmin, Grafana, cổng Nginx và Loki. Trong môi trường thật, cần sao chép thành .env, đổi mọi mật khẩu/secret mẫu và không đưa .env lên Git. Nên kiểm tra .gitignore và lịch sử Git để bảo đảm secret chưa từng bị commit.
+[55] 4.3. Quản lý phiên bản
+[56] README trong ZIP liên kết kho GitHub của dự án. Khi nộp báo cáo, nên đính kèm mã commit đang dùng và ngày kiểm tra để giảng viên có thể đối chiếu đúng phiên bản cấu hình.
+[58] 5. CƠ SỞ DỮ LIỆU POSTGRESQL
+[59] 5.1. Khởi tạo dữ liệu
+[60] Tệp database/init.sql sử dụng PostgreSQL và bật các extension uuid-ossp, pgcrypto. Script tạo các bảng nghiệp vụ chính gồm users, projects, project_members, tasks và task_comments; có các khóa chính UUID, khóa ngoại và một số ràng buộc trạng thái.
+[61] 5.2. Volume và tính bền vững
+[62] docker-compose.yml khai báo volume postgres_data để dữ liệu tồn tại qua lần tạo lại container thông thường. Tuy nhiên, lệnh docker compose down -v sẽ xóa các volume khai báo và có thể làm mất dữ liệu. Trước khi dùng lệnh reset cần sao lưu dữ liệu.
+[63] 5.3. Sao lưu và phục hồi
+[64] Sao lưu định kỳ bằng pg_dump, lưu bản sao ở vị trí tách biệt khỏi máy chủ chạy ứng dụng.
+[65] Mã hóa bản sao lưu và giới hạn người có quyền đọc.
+[66] Thử phục hồi trên môi trường thử nghiệm; bản sao lưu chưa từng phục hồi thử không thể coi là phương án dự phòng đã được kiểm chứng.
+[67] Định nghĩa thời gian lưu, lịch sao lưu và mục tiêu RPO/RTO phù hợp với yêu cầu môn học hoặc hệ thống.
+[68] 5.4. Health check
+[69] Controller /health gọi DatabaseService.isHealthy(). Khi database khỏe, endpoint trả HTTP 200; khi database không khỏe, trả HTTP 503 cùng thông tin trạng thái và bộ nhớ tiến trình. Điều này hữu ích cho kiểm tra nhanh, nhưng không thay thế kiểm tra CRUD hoặc truy vấn nghiệp vụ.
+[71] 6. BACKEND NESTJS VÀ API
+[72] 6.1. Tổ chức backend
+[73] Backend được chia theo module nghiệp vụ, bao gồm auth, users, projects, tasks, dashboard, database, health và metrics. Cách chia module giúp phân tách trách nhiệm, dễ kiểm thử và bảo trì. DTO/validation nên được kiểm tra ở các endpoint nhận dữ liệu từ người dùng.
+[74] 6.2. Xác thực và phân quyền
+[75] README mô tả xác thực JWT Bearer Token. Khi vận hành thực tế, cần kiểm tra token hết hạn, token sai chữ ký, endpoint yêu cầu đăng nhập và endpoint yêu cầu vai trò cụ thể. CORS_ORIGIN đang có giá trị mặc định '*' trong cấu hình mẫu; nên giới hạn theo domain frontend ở môi trường triển khai.
+[76] 6.3. Tài liệu API
+[77] Mã nguồn main.ts cấu hình Swagger. Sau khi backend khởi chạy, mở đường dẫn Swagger được định nghĩa trong main.ts để xem endpoint, schema request/response và thử API. Không ghi nhận kết quả Swagger hoạt động thành công trong môi trường hiện tại do không hoàn thành quy trình chạy toàn hệ thống.
+[78] 6.4. Metrics và health
+[79] Endpoint metrics cung cấp dữ liệu để Prometheus scrape. Endpoint health phụ thuộc trực tiếp vào khả năng kết nối PostgreSQL. Khi điều tra lỗi, nên đối chiếu log backend, trạng thái container database, biến môi trường kết nối và kết quả health check.
+[80] 6.5. Checklist kiểm thử API
+[81] Đăng ký tài khoản với dữ liệu hợp lệ và dữ liệu thiếu trường.
+[82] Đăng nhập đúng/sai mật khẩu; xác minh phản hồi không làm lộ thông tin nhạy cảm.
+[83] Gọi API cần token khi thiếu token, token hết hạn và token hợp lệ.
+[84] Kiểm tra vai trò ADMIN, PROJECT_MANAGER, MEMBER với endpoint được phân quyền.
+[85] Thử tạo/sửa/xóa dự án và công việc; xác minh dữ liệu sau thao tác trong PostgreSQL.
+[86] Kiểm tra /health và endpoint metrics khi database hoạt động và khi database bị dừng.
+[88] 7. FRONTEND REACT
+[90] Hình 2. Minh họa bố cục dashboard; các số liệu trên hình là dữ liệu giả lập.
+[91] 7.1. Các trang và điều hướng
+[92] App.tsx khai báo các route /login, /dashboard, /projects, /projects/:id, /tasks, /members và /profile. Đường dẫn gốc điều hướng đến dashboard; route không nhận diện cũng điều hướng về dashboard. Đây là bằng chứng về cấu trúc điều hướng trong mã nguồn, không phải xác nhận các trang đã được kiểm thử trên trình duyệt.
+[93] 7.2. Giao tiếp API
+[94] Frontend có thư mục services và sử dụng Axios theo danh sách dependency. Khi chạy, cần xác minh base URL của API, cấu hình proxy Nginx, xử lý lỗi HTTP, trạng thái tải dữ liệu và thông báo khi phiên đăng nhập hết hạn.
+[95] 7.3. Kiểm thử giao diện
+[96] 7.4. Khả năng truy cập và trải nghiệm
+[97] Nên kiểm tra bố cục ở màn hình nhỏ, tương phản màu, nhãn form, thao tác bằng bàn phím và thông báo lỗi dễ hiểu. Dữ liệu dashboard cần lấy từ API thật thay vì số liệu minh họa; ảnh trong báo cáo không đại diện cho trạng thái dữ liệu thật.
+[99] 8. DOCKER COMPOSE VÀ QUY TRÌNH TRIỂN KHAI
+[100] 8.1. Điều phối dịch vụ
+[101] docker-compose.yml khai báo chín dịch vụ: postgres, pgadmin, backend, frontend, nginx, prometheus, grafana, loki và promtail. Các service được nối vào pm_public_network và/hoặc pm_internal_network. PostgreSQL không publish cổng trực tiếp ra host; pgAdmin, Nginx và các công cụ giám sát có port mapping theo biến môi trường.
+[102] 8.2. Quy trình khởi chạy đề xuất
+[103] Cài Docker Desktop hoặc Docker Engine cùng Docker Compose v2; bảo đảm daemon đang chạy.
+[104] Sao chép .env.example thành .env; đổi mật khẩu và JWT_SECRET; không dùng secret mặc định trong môi trường công khai.
+[105] Kiểm tra cấu hình trước khi khởi động bằng docker compose config.
+[106] Khởi động dịch vụ bằng docker compose up -d --build.
+[107] Kiểm tra container bằng docker compose ps và xem log bằng docker compose logs --tail=100.
+[108] Đợi PostgreSQL healthy, sau đó kiểm tra /health và giao diện qua Nginx.
+[109] Kiểm tra Prometheus targets, datasource Grafana và log trong Loki.
+[110] Sau khi kiểm thử, ghi lại phiên bản, thời gian, kết quả và ảnh chụp màn hình thật.
+[111] 8.3. Các cổng truy cập mặc định
+[112] 8.4. Lưu ý về dữ liệu
+[113] Không chạy docker compose down -v nếu cần giữ database/metrics/log. Với lần chạy đầu, theo dõi log khởi tạo SQL; nếu volume database đã tồn tại thì script trong thư mục docker-entrypoint-initdb.d thường không tự chạy lại trên volume cũ.
+[115] 9. NGINX VÀ BẢO MẬT
+[116] 9.1. Reverse proxy
+[117] Cấu hình Nginx khai báo hai upstream frontend_service và backend_service. Reverse proxy gom điểm truy cập, giúp frontend không phải kết nối trực tiếp đến cổng backend và hỗ trợ ghi access/error log. Cấu hình cũng giới hạn body request, bật gzip và có endpoint health riêng cho Nginx.
+[118] 9.2. Security headers
+[119] 9.3. Rủi ro cấu hình cần xử lý
+[120] Thay secret mặc định trong .env.example; tạo JWT_SECRET đủ mạnh và riêng cho môi trường.
+[121] Giới hạn CORS_ORIGIN thay vì '*', nhất là khi API dùng cookie hoặc token.
+[122] Không công khai pgAdmin, Prometheus, Grafana hoặc Loki nếu không có xác thực, firewall hoặc VPN.
+[123] Cấu hình HTTPS/TLS bằng chứng chỉ phù hợp; kiểm tra tự động gia hạn và cấu hình redirect HTTP → HTTPS.
+[124] Áp dụng rate limiting ở Nginx/API; ghi log đủ thông tin để điều tra nhưng không ghi token/mật khẩu.
+[125] Đánh giá lại X-XSS-Protection vì đây là cơ chế cũ; cân nhắc Content-Security-Policy theo khả năng tương thích ứng dụng.
+[127] 10. GIÁM SÁT PROMETHEUS VÀ GRAFANA
+[129] Hình 3. Minh họa dashboard và truy vấn log; không phải dữ liệu runtime.
+[130] 10.1. Prometheus
+[131] Prometheus thu thập chuỗi thời gian từ các target được khai báo trong prometheus/prometheus.yml. Sau khi triển khai cần vào trang Targets, kiểm tra từng target ở trạng thái UP, xác minh scrape interval và xử lý target DOWN bằng cách kiểm tra DNS nội bộ, cổng, endpoint metrics và mạng Docker.
+[132] 10.2. Grafana
+[133] Grafana kết nối datasource Prometheus để hiển thị chỉ số. Dashboard nên có các biểu đồ CPU, RAM, trạng thái container, request/error rate và chỉ số database phù hợp. Mỗi biểu đồ cần tên, đơn vị và khoảng thời gian rõ ràng để tránh diễn giải sai.
+[134] 10.3. Quy trình điều tra sự cố
+[135] Xác định thời điểm và dịch vụ có dấu hiệu bất thường.
+[136] Đối chiếu metrics trước, trong và sau thời điểm sự cố.
+[137] Mở log tương ứng trong Loki/Grafana Explore.
+[138] Khoanh vùng container, endpoint và nguyên nhân; ghi lại bằng chứng.
+[139] Khắc phục, kiểm tra lại và ghi nhận hành động phòng ngừa.
+[140] 10.4. Cảnh báo
+[141] Nên xây dựng rule cho tình trạng target down, tỷ lệ lỗi HTTP tăng, database không khỏe và mức sử dụng CPU/RAM vượt ngưỡng. Ngưỡng cảnh báo cần được hiệu chỉnh bằng số liệu thực tế; không nên đặt ngưỡng cố định mà chưa hiểu tải nền.
+[143] 11. THU THẬP LOG VỚI LOKI/PROMTAIL
+[144] 11.1. Luồng log
+[145] Promtail đóng vai trò log shipper, đọc các nguồn log được khai báo trong promtail/promtail-config.yml rồi gửi tới Loki. Grafana dùng Loki datasource để tìm kiếm. Chất lượng truy vấn phụ thuộc vào label, format log, quyền đọc file và độ đồng bộ thời gian.
+[146] 11.2. Truy vấn LogQL tham khảo
+[147] 11.3. Tình huống mô phỏng
+[148] Có thể gửi một số request đến đường dẫn thử nghiệm không tồn tại trong môi trường lab, sau đó kiểm tra access log và xác nhận log đã xuất hiện trong Loki. Nếu xây dựng alert dựa trên tần suất 404, cần kiểm tra biểu thức LogQL, cửa sổ thời gian, ngưỡng và trạng thái Firing/Resolved.
+[149] 11.4. Bảo vệ log
+[150] Không ghi mật khẩu, JWT, cookie phiên hoặc thông tin cá nhân không cần thiết vào log.
+[151] Giới hạn quyền truy cập Grafana/Loki và thời gian lưu trữ log.
+[152] Đồng bộ thời gian hệ thống để hỗ trợ tương quan sự kiện.
+[153] Đặt label có kiểm soát; tránh label có cardinality quá cao như URL chứa ID duy nhất.
+[154] Kiểm thử đường đi log end-to-end và giữ lại ảnh chụp thật khi nghiệm thu.
+[156] 12. KIỂM THỬ, KẾT QUẢ CHẠY THỬ VÀ HẠN CHẾ
+[158] Hình 4. Bằng chứng môi trường: Docker chưa có; frontend build bị thiếu dependency native.
+[159] 12.1. Kết quả thực hiện trong môi trường hiện tại
+[160] 12.2. Kết luận kiểm thử
+[161] Chưa thể xác nhận toàn bộ ứng dụng chạy thành công từ tệp ZIP trong môi trường hiện tại. Backend biên dịch sẵn trong thư mục dist đã khởi tạo NestJS và đăng ký các route, nhưng không kết nối được PostgreSQL tại 127.0.0.1:5432 nên tiếp tục retry. Docker CLI chưa có; frontend build thất bại do thiếu gói native Rollup. Vì vậy, chưa có kiểm chứng end-to-end cho giao diện, database, reverse proxy và bộ giám sát.
+[162] 12.3. Cách khắc phục đề xuất
+[163] Cài Docker Desktop trên Windows hoặc Docker Engine + Compose plugin trên Linux; khởi động daemon trước khi chạy lệnh Compose.
+[164] Trên máy có Docker, chạy docker compose config để phát hiện lỗi YAML/biến môi trường.
+[165] Nếu chạy Node trực tiếp, cài lại dependency trên đúng hệ điều hành bằng npm ci trong từng thư mục backend và frontend; không sao chép node_modules từ hệ điều hành khác.
+[166] Chạy npm run build cho frontend/backend, xử lý lỗi TypeScript trước khi khởi chạy.
+[167] Khởi động docker compose up -d --build, rồi kiểm tra docker compose ps và docker compose logs.
+[168] Chụp ảnh thật của trình duyệt, Swagger, Prometheus Targets, Grafana và health endpoint sau khi mọi bước thành công.
+[170] 13. ĐÁNH GIÁ BẢO MẬT VÀ HƯỚNG CẢI TIẾN
+[171] 13.1. Kế hoạch cải tiến theo giai đoạn
+[172] 14. KẾT LUẬN
+[173] Dự án cung cấp một kiến trúc full-stack có các thành phần tương đối đầy đủ cho bài toán quản lý dự án: React frontend, NestJS backend, PostgreSQL, Nginx reverse proxy, Docker Compose và bộ giám sát/logging. Các cấu hình nguồn cho thấy định hướng tách lớp ứng dụng, dữ liệu và công cụ vận hành.
+[174] Tuy nhiên, lần chạy thử trong môi trường hiện tại chưa hoàn tất do thiếu Docker CLI và dependency native frontend không phù hợp. Vì vậy, kết luận phù hợp nhất là đã rà soát được cấu trúc và cấu hình dự án, nhưng chưa có đủ bằng chứng để tuyên bố hệ thống triển khai thành công. Bước tiếp theo cần chạy trên máy có Docker, thực hiện checklist kiểm thử và thay các hình minh họa bằng ảnh chụp thực tế.
+[175] PHỤ LỤC A. LỆNH KIỂM CHỨNG
+[176] docker --version
+[177] docker compose version
+[178] docker compose config
+[179] docker compose up -d --build
+[180] docker compose ps
+[181] docker compose logs --tail=100
+[182] curl -i http://localhost/health
+[183] docker compose exec postgres pg_isready -U postgres_admin -d project_management_db
+[184] docker compose down
+[185] PHỤ LỤC B. NGUỒN RÀ SOÁT
+[186] duantrienkhai/README.md
+[187] duantrienkhai/docker-compose.yml
+[188] duantrienkhai/.env.example
+[189] duantrienkhai/backend/src/health/health.controller.ts
+[190] duantrienkhai/frontend/src/App.tsx
+[191] duantrienkhai/database/init.sql
+[192] duantrienkhai/nginx/conf.d/default.conf
+[193] duantrienkhai/prometheus/prometheus.yml
+[194] duantrienkhai/loki/loki-config.yml
+[195] duantrienkhai/promtail/promtail-config.yml
+[T0] TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG KHOA CÔNG NGHỆ THÔNG TIN   BÁO CÁO TRIỂN KHAI VÀ QUẢN TRỊ HỆ THỐNG PHẦN MỀM Đề tài: Hệ thống Quản lý Dự án (Project Management)  Thái Nguyên, 2026
+[T1] Phân hệ | Chức năng thể hiện trong mã nguồn/tài liệu | Ghi chú
+[T1] Đăng nhập | Trang /login, xác thực người dùng | Backend có module auth và JWT
+[T1] Dashboard | Trang /dashboard, thống kê tổng quan | Số liệu thực tế phụ thuộc API và CSDL
+[T1] Quản lý dự án | Danh sách dự án, chi tiết dự án | Route /projects và /projects/:id
+[T1] Quản lý công việc | Trang công việc, trạng thái Kanban | Route /tasks; README nêu TODO/IN_PROGRESS/DONE
+[T1] Quản lý thành viên | Trang thành viên | Route /members
+[T1] Hồ sơ | Trang thông tin cá nhân | Route /profile
+[T1] Health check | GET /health | Kiểm tra kết nối PostgreSQL và trả trạng thái
+[T1] Metrics | Endpoint metrics cho Prometheus | Dùng phục vụ giám sát
+[T1] Log tập trung | Nginx/backend logs → Promtail → Loki | Tìm kiếm trong Grafana nếu datasource được cấu hình
+[T1] Tài liệu API | Swagger được cấu hình trong backend | Đường dẫn cụ thể cần xác minh sau khi chạy
+[T2] Dịch vụ | Vai trò | Cổng theo cấu hình mặc định
+[T2] Nginx | Cổng vào, reverse proxy frontend/API | 80, 443
+[T2] Frontend | React SPA được phục vụ qua web server container | Nội bộ :80
+[T2] Backend | NestJS REST API | Nội bộ :3000
+[T2] PostgreSQL | Lưu dữ liệu nghiệp vụ | Nội bộ :5432
+[T2] pgAdmin | Giao diện quản trị CSDL | Host :5050
+[T2] Prometheus | Thu thập và lưu metrics | Host :9090
+[T2] Grafana | Dashboard metrics/logs | Host :3001 → container :3000
+[T2] Loki | Lưu trữ log tập trung | Host :3100 theo .env
+[T2] Promtail | Thu thập và chuyển log | Không cần public port
+[T3] Thư mục/tệp | Nội dung chính
+[T3] backend/src/auth | Đăng ký, đăng nhập, JWT strategy/guard
+[T3] backend/src/projects | Nghiệp vụ dự án và thành viên
+[T3] backend/src/tasks | Nghiệp vụ công việc
+[T3] backend/src/dashboard | API tổng quan
+[T3] backend/src/health | Health check
+[T3] backend/src/metrics | Metrics cho Prometheus
+[T3] frontend/src/pages | Login, Dashboard, Projects, ProjectDetail, Tasks, Members, Profile
+[T3] database/init.sql | Tạo bảng, ràng buộc và dữ liệu khởi tạo
+[T3] nginx/conf.d | Reverse proxy, headers, log và endpoint kiểm tra Nginx
+[T3] prometheus/prometheus.yml | Khai báo cấu hình scrape
+[T3] loki/loki-config.yml | Cấu hình Loki
+[T3] promtail/promtail-config.yml | Cấu hình thu thập log
+[T3] grafana/provisioning | Provisioning datasource/dashboard nếu có cấu hình
+[T3] docker-compose.yml | Điều phối 9 dịch vụ, volume và network
+[T4] Bảng | Vai trò dữ liệu dự kiến | Kiểm tra cần thực hiện
+[T4] users | Tài khoản, tên, email, role, trạng thái | Email duy nhất; password_hash không lưu mật khẩu thô
+[T4] projects | Thông tin và trạng thái dự án | Kiểm tra manager_id và trạng thái hợp lệ
+[T4] project_members | Liên kết thành viên với dự án | Kiểm tra ràng buộc khóa ngoại/trùng thành viên
+[T4] tasks | Công việc, trạng thái, người phụ trách | Kiểm tra quan hệ dự án và thành viên
+[T4] task_comments | Bình luận gắn với công việc/người dùng | Kiểm tra cascade delete và quyền xem
+[T5] Ca kiểm thử | Kết quả mong đợi
+[T5] Mở /login | Hiển thị form đăng nhập
+[T5] Đăng nhập hợp lệ | Chuyển đến dashboard và tải dữ liệu
+[T5] Mở /projects | Hiển thị danh sách dự án hoặc trạng thái rỗng
+[T5] Mở chi tiết dự án | Tải thông tin theo tham số id
+[T5] Mở /tasks | Hiển thị công việc và trạng thái
+[T5] Mở /members và /profile | Hiển thị dữ liệu tương ứng
+[T5] API lỗi hoặc mất mạng | Có thông báo lỗi; giao diện không treo
+[T6] URL/Port | Mục đích | Lưu ý
+[T6] http://localhost | Web qua Nginx | Cổng HTTP mặc định 80
+[T6] https://localhost | Web HTTPS nếu chứng chỉ/cấu hình đã sẵn sàng | Có thể cần chấp nhận chứng chỉ tự ký trong lab
+[T6] http://localhost:5050 | pgAdmin | Nên giới hạn truy cập
+[T6] http://localhost:9090 | Prometheus | Không nên public rộng rãi
+[T6] http://localhost:3001 | Grafana | Đổi mật khẩu admin mặc định
+[T6] localhost:3100 | Loki | Không nên mở trực tiếp ra Internet
+[T7] Header | Mục đích | Lưu ý
+[T7] X-Frame-Options: SAMEORIGIN | Giảm nguy cơ clickjacking qua iframe khác origin | Kiểm tra chính sách nhúng ứng dụng
+[T7] X-Content-Type-Options: nosniff | Ngăn trình duyệt tự suy đoán MIME type | Giữ Content-Type đúng
+[T7] X-XSS-Protection: 1; mode=block | Header legacy cho một số trình duyệt cũ | Không thay thế encode output/CSP
+[T7] Referrer-Policy: strict-origin-when-cross-origin | Giảm rò rỉ URL referrer sang origin khác | Có thể điều chỉnh theo nhu cầu
+[T7] Permissions-Policy | Tắt camera, microphone, geolocation theo cấu hình | Bổ sung khi tính năng cần thiết
+[T8] Mục đích | Truy vấn
+[T8] Xem log theo job | {job="docker-json"}
+[T8] Tìm từ khóa lỗi | {job="docker-json"} |~ "(?i)error|failed|exception"
+[T8] Tìm request thử nghiệm 404 | {job="docker-json"} |= "GET /security-test-probe HTTP/1.1\" 404"
+[T9] Hạng mục | Kết quả quan sát | Đánh giá
+[T9] Kiểm tra Docker CLI | docker: command not found | Không thể chạy Docker Compose tại môi trường này
+[T9] Node.js | v22.16.0 | Có Node.js
+[T9] Frontend build qua npm | vite: Permission denied | Shim vite không có quyền thực thi
+[T9] Frontend build gọi trực tiếp Node | Thiếu @rollup/rollup-linux-x64-gnu | Dependency native của Rollup chưa phù hợp/đầy đủ
+[T9] Backend build qua Nest CLI | Không có kết quả build hợp lệ từ shim | Cần cài lại dependency hoặc chạy trên môi trường chuẩn
+[T9] Health check runtime | Chưa kiểm tra được | Cần khởi chạy backend và PostgreSQL
+[T9] Backend runtime trực tiếp | NestJS khởi tạo và map route; PostgreSQL connection failed, đang retry | Ứng dụng khởi động được ở mức tiến trình, nhưng nghiệp vụ cần DB chưa xác minh
+[T10] Mức ưu tiên | Vấn đề | Hành động
+[T10] Cao | Secret mặc định trong file mẫu | Đổi secret trước triển khai; không commit .env
+[T10] Cao | Công cụ quản trị/giám sát có thể được publish ra host | Giới hạn bằng firewall/VPN/SSH tunnel và xác thực mạnh
+[T10] Cao | Chưa xác minh HTTPS thực tế | Kiểm tra certificate, redirect và TLS config
+[T10] Cao | Chưa chạy kiểm thử end-to-end | Thực hiện checklist Chương 12 trên máy có Docker
+[T10] Trung bình | CORS mặc định '*' | Giới hạn origin theo domain ứng dụng
+[T10] Trung bình | Chưa có bằng chứng backup/restore | Thiết lập lịch sao lưu và thử phục hồi
+[T10] Trung bình | Cảnh báo metrics/log chưa nghiệm thu | Kiểm thử alert rule và quy trình xử lý
+[T10] Thấp | Chưa ghi lại phiên bản runtime triển khai | Ghi phiên bản image, commit hash, ngày triển khai
+[T11] Giai đoạn | Việc cần làm | Tiêu chí hoàn thành
+[T11] 1. Ổn định môi trường | Cài Docker; build lại image; kiểm tra biến môi trường | Compose khởi chạy và các container healthy
+[T11] 2. Kiểm thử chức năng | Test đăng nhập, CRUD dự án/công việc, phân quyền | Checklist API/UI có kết quả và bằng chứng
+[T11] 3. Bảo mật | Đổi secret, giới hạn cổng, cấu hình TLS/CORS/rate limit | Không còn secret mẫu; truy cập quản trị được giới hạn
+[T11] 4. Observability | Kiểm tra targets, dashboard, log và alert | Metrics/log truy vấn được; alert thử nghiệm hoạt động
+[T11] 5. Vận hành | Backup/restore, tài liệu xử lý sự cố, cập nhật dependency | Có quy trình và biên bản kiểm thử

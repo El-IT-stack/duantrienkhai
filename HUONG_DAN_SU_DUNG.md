@@ -154,6 +154,20 @@ docker compose ps
 ```
 **Yêu cầu đạt chuẩn:** Tất cả 12 container đều hiển thị `STATUS: Up` (và `pm_postgres`, `pm_cadvisor` hiển thị `healthy`).
 
+### Bước 5.1: Kiểm tra log khởi động toàn bộ dịch vụ
+Để đảm bảo các container khởi động trơn tru và kết nối cơ sở dữ liệu thành công, kiểm tra log khởi động:
+```powershell
+# Xem nhanh 30 dòng log gần nhất của tất cả dịch vụ:
+docker compose logs --tail=30
+
+# Hoặc chỉ kiểm tra riêng log khởi động của Backend:
+docker compose logs --tail=30 backend
+
+# Xem log theo thời gian thực (nhấn Ctrl + C để thoát):
+# Trên Windows: Click đúp file logs.bat (hoặc gõ .\logs.bat)
+# Trên Linux / macOS: Thực thi ./logs.sh
+```
+
 ### Bước 6: Truy cập các dịch vụ trên trình duyệt
 Mở trình duyệt web và truy cập theo bảng địa chỉ sau:
 
@@ -210,34 +224,50 @@ Mật khẩu mặc định cho toàn bộ tài khoản mẫu: **`Admin@123`**
 
 ### 5.3. Sử dụng pgAdmin 4 để quản trị PostgreSQL
 1. Truy cập `http://localhost:5050`, đăng nhập: `admin@pm.com` / `PgAdmin@2026_Secure!`.
-2. Chuột phải vào mục **Servers** -> Chọn **Register** -> **Server...**:
-   * Tab **General**: Đặt tên gợi nhớ (ví dụ: `Project Management DB`).
-   * Tab **Connection**:
-     * Host name/address: `postgres`
-     * Port: `5432`
-     * Maintenance database: `project_management_db`
-     * Username: `postgres_admin`
-     * Password: `StrongP@ssw0rd_2026_Secure!`
-   * Bấm **Save**.
-3. Xem các bảng dữ liệu tại: `Databases` -> `project_management_db` -> `Schemas` -> `public` -> `Tables`.
+2. Hệ thống đã được **tự động nạp sẵn Server kết nối** (Auto-discovery):
+   * Ở thanh bên trái (**Object Explorer**), click vào biểu tượng mũi tên `>` cạnh mục **Servers**.
+   * Bạn sẽ thấy server **`Project Management DB`**.
+   * Nhấp chuột vào **`Project Management DB`** để kết nối (nếu hỏi mật khẩu, nhập: `StrongP@ssw0rd_2026_Secure!` và tích chọn *Save Password*).
+3. Xem toàn bộ danh sách 5 bảng dữ liệu thực tế tại:
+   * **Servers** -> **Project Management DB** -> **Databases** -> **`project_management_db`** -> **Schemas** -> **`public`** -> **`Tables`**.
+   * Gồm: `users`, `projects`, `project_members`, `tasks`, `task_comments`.
+   * Chuột phải vào bất kỳ bảng nào -> Chọn **View/Edit Data** -> **All Rows** để xem dữ liệu demo.
+
+*(Lưu ý: Nếu bạn muốn tự thêm thủ công một kết nối mới: Chuột phải vào **Servers** -> **Register** -> **Server...** -> Đặt tên tại tab *General*, và tab *Connection* điền Host: `postgres`, Port: `5432`, Database: `project_management_db`, Username: `postgres_admin`, Password: `StrongP@ssw0rd_2026_Secure!` -> Bấm Save)*.
 
 ---
 
 ## 6. TÀI LIỆU TỔNG HỢP LỆNH XEM & PHÂN TÍCH LOG
 
-### 6.1. Lệnh xem log qua Docker CLI
+Hệ thống hỗ trợ 3 phương thức kiểm tra log toàn diện từ cơ bản đến nâng cao: Script tiện ích tự động, Docker CLI trực tiếp, và Giao diện Grafana Loki (LogQL).
 
-#### Xem log tổng hợp toàn bộ 12 dịch vụ
+---
+
+### 6.1. Xem log nhanh bằng Script tiện ích có sẵn
+Thư mục dự án đã tạo sẵn các script tự động gom log toàn bộ 12 container theo thời gian thực:
+* **Trên Windows:** Click đúp chuột vào file **`logs.bat`** (hoặc mở Terminal gõ `.\logs.bat`).
+* **Trên Linux / macOS:** Chạy lệnh `./logs.sh`.
+*(Nhấn tổ hợp phím `Ctrl + C` để dừng chế độ theo dõi log)*.
+
+---
+
+### 6.2. Lệnh xem và kiểm tra log qua Docker CLI
+
+#### 1. Xem log tổng hợp toàn bộ 12 dịch vụ
 ```powershell
+# Theo dõi realtime toàn bộ log phát sinh:
 docker compose logs -f
+
+# Xem 50 dòng log gần nhất của toàn bộ hệ thống (không treo terminal):
+docker compose logs --tail=50
 ```
 
-#### Xem log của từng dịch vụ cụ thể
+#### 2. Xem log chi tiết của từng dịch vụ cụ thể
 ```powershell
-# Xem log Nginx Reverse Proxy (truy cập Web, chuyển tiếp API):
+# Xem log Nginx Reverse Proxy (truy cập Web, định tuyến API):
 docker compose logs -f nginx
 
-# Xem log Backend API (NestJS):
+# Xem log Backend API (NestJS REST API):
 docker compose logs -f backend
 
 # Xem log Cơ sở dữ liệu PostgreSQL:
@@ -246,59 +276,122 @@ docker compose logs -f postgres
 # Xem log Tác nhân thu thập log Promtail:
 docker compose logs -f promtail
 
-# Xem log Máy chủ lưu trữ log Loki:
+# Xem log Máy chủ lưu trữ và lập chỉ mục log Loki:
 docker compose logs -f loki
 
 # Xem log Hệ thống giám sát Prometheus:
 docker compose logs -f prometheus
+
+# Xem log Dashboard Grafana:
+docker compose logs -f grafana
 ```
 
-#### Xem số lượng dòng log gần nhất kèm Timestamp
+#### 3. Xem log kèm Timestamp và giới hạn số dòng
 ```powershell
 # Xem 50 dòng log gần nhất của Backend:
 docker compose logs --tail=50 backend
 
-# Xem log Backend có gắn mốc thời gian chi tiết:
+# Xem log Backend kèm mốc thời gian ISO chi tiết:
 docker compose logs -f -t backend
+
+# Xem 100 dòng log gần nhất của Nginx:
+docker compose logs --tail=100 nginx
 ```
 
-#### Đọc trực tiếp file log có cấu trúc bên trong container
+#### 4. Lọc log lỗi nhanh bằng lệnh tìm kiếm (Filter Error)
 ```powershell
-# Xem 20 dòng access log JSON mới nhất của Nginx:
+# Trên Windows PowerShell (Lọc các dòng có chứa lỗi):
+docker compose logs --tail=150 | Select-String -Pattern "error|fail|warn|exception" -CaseSensitive:$false
+
+# Trên Windows CMD:
+docker compose logs --tail=150 | findstr /i "error fail warn exception"
+
+# Trên Linux / macOS (Bash):
+docker compose logs --tail=150 | grep -Ei "error|fail|warn|exception"
+```
+
+#### 5. Đọc trực tiếp file log có cấu trúc bên trong container
+Hệ thống cấu hình ghi file log chuyên dụng để Promtail thu thập:
+```powershell
+# Đọc 20 dòng access log định dạng JSON mới nhất của Nginx:
 docker compose exec nginx tail -n 20 /var/log/nginx/pm_access.log
 
-# Xem 20 dòng application log JSON của Backend:
+# Đọc log lỗi Nginx (nếu có):
+docker compose exec nginx tail -n 20 /var/log/nginx/pm_error.log
+
+# Đọc 20 dòng application log định dạng JSON của Backend:
 docker compose exec backend tail -n 20 /var/log/backend/app.log
+
+# Theo dõi file log Nginx trực tiếp theo thời gian thực:
+docker compose exec nginx tail -f /var/log/nginx/pm_access.log
 ```
 
 ---
 
-### 6.2. Truy vấn Log tập trung qua LogQL trên Grafana
+### 6.3. Truy vấn Log tập trung qua LogQL trên Grafana Explore (Loki)
 
-1. Mở Grafana tại `http://localhost:3001` (đăng nhập `admin` / `Grafana@2026_Secure!`).
-2. Vào mục **Explore** (biểu tượng la bàn ở thanh menu bên trái, hoặc truy cập thẳng `http://localhost:3001/explore`).
+Grafana tích hợp nguồn dữ liệu Loki cho phép tìm kiếm, trích xuất và phân tích log tập trung thông qua ngôn ngữ **LogQL**.
+
+#### Quy tắc đặt nhãn (Labels) của hệ thống
+> [!WARNING]
+> **LƯU Ý QUAN TRỌNG VỀ NHÃN (LABEL):**
+> Trong Grafana Loki, hệ thống này **KHÔNG** sử dụng nhãn `{container="..."}` hay `{container_name="..."}`. Nếu bạn nhập `{container="nginx"}` sẽ nhận thông báo lỗi: `No logs volume available` (không tìm thấy dữ liệu).
+> 
+> Thay vào đó, hãy sử dụng nhãn **`service`** hoặc **`job`** theo bảng chuẩn dưới đây:
+
+| Mục tiêu cần kiểm tra | Nhãn & Câu truy vấn LogQL chuẩn | Ý nghĩa & Mô tả |
+|---|---|---|
+| **Log Nginx (Chung)** | `{service="nginx"}` | Toàn bộ log truy cập và lỗi phát sinh tại cổng Nginx |
+| **Log Nginx Access** | `{job="nginx_access"}` | Chi tiết từng lượt request HTTP/HTTPS vào Web/API |
+| **Log Nginx Error** | `{job="nginx_error"}` | Cảnh báo hoặc lỗi kết nối upstream của Nginx |
+| **Log Backend API** | `{service="backend"}` hoặc `{job="app"}` | Log hoạt động, truy vấn DB, ngoại lệ của NestJS API |
+| **Toàn bộ Container** | `{job="docker-containers"}` | Gom toàn bộ log từ tất cả các container |
+
+#### Các bước mở và truy vấn Log trên Grafana:
+1. Mở trình duyệt truy cập: `http://localhost:3001` (Tài khoản: `admin` / `Grafana@2026_Secure!`).
+2. Vào mục **Explore** (biểu tượng la bàn ở thanh menu bên trái, hoặc truy cập nhanh `http://localhost:3001/explore`).
 3. Tại ô chọn Datasource phía trên cùng, chọn **Loki**.
-4. Chuyển sang chế độ nhập truy vấn **Code** và thử nghiệm 3 câu truy vấn LogQL chuẩn sau:
+4. **Mẹo thao tác nhanh:** Bấm vào nút **`Label browser`** (cạnh nút *Kick start your query*) -> chọn label `service` hoặc `job` -> bấm chọn dịch vụ cần xem -> bấm **Show logs**.
 
-#### Truy vấn 1: Xem toàn bộ Log Nginx Access thời gian thực
-```logql
-{job="nginx_access"}
+#### 5 Câu truy vấn LogQL thực tế hay dùng nhất:
+
+* **Câu 1 - Xem toàn bộ lưu lượng truy cập Nginx thời gian thực:**
+  ```logql
+  {job="nginx_access"}
+  ```
+  *Bóc tách JSON hiển thị: IP client, method HTTP, URI, status code, response time.*
+
+* **Câu 2 - Lọc cảnh báo & lỗi HTTP (Mã trạng thái >= 400):**
+  ```logql
+  {job="nginx_access"} | json | status >= 400
+  ```
+  *Khoanh vùng các request lỗi 400 (Bad Request), 401 (Unauthorized), 404 (Not Found), 500 (Internal Server Error).*
+
+* **Câu 3 - Xem toàn bộ log Backend NestJS API:**
+  ```logql
+  {service="backend"}
+  ```
+
+* **Câu 4 - Lọc các log lỗi ứng dụng Backend cấp độ `error`:**
+  ```logql
+  {job="app"} | json | level="error"
+  ```
+  *Hiển thị chi tiết lỗi runtime, thông báo ngoại lệ (exception) và call stack.*
+
+* **Câu 5 - Tìm kiếm theo từ khóa trong log Backend (VD: "UUID" hoặc "Database"):**
+  ```logql
+  {service="backend"} |= "UUID"
+  ```
+  *(Lọc ra tất cả các dòng log Backend có chứa từ khóa "UUID")*.
+
+#### Kiểm tra trạng thái máy chủ Loki qua API:
+```powershell
+# Trên PowerShell kiểm tra các nhãn log đang hoạt động trong Loki:
+(Invoke-RestMethod -Uri 'http://localhost:3100/loki/api/v1/labels').data
+
+# Xem các giá trị của nhãn service:
+(Invoke-RestMethod -Uri 'http://localhost:3100/loki/api/v1/label/service/values').data
 ```
-* **Ý nghĩa:** Trích xuất toàn bộ request HTTP đi qua cổng Nginx Reverse Proxy kèm IP client, method (GET/POST/PATCH), URI, status code và thời gian xử lý (`request_time`).
-
-#### Truy vấn 2: Lọc các request Nginx bị lỗi có mã trạng thái HTTP >= 400
-```logql
-{job="nginx_access"} | json | status >= 400
-```
-* **Ý nghĩa:** Sử dụng bộ lọc JSON Parser của LogQL để bóc tách trường `status` và lọc ra các request lỗi client (400 Bad Request, 401 Unauthorized, 404 Not Found) hoặc lỗi máy chủ (500 Internal Server Error) để khoanh vùng sự cố.
-
-#### Truy vấn 3: Lọc log lỗi của ứng dụng Backend
-```logql
-{job="app"} | json | level="error"
-```
-* **Ý nghĩa:** Lọc các log do ứng dụng NestJS ghi ra với cấp độ lỗi `error`, hiển thị chi tiết thông báo lỗi cụ thể (Error message), route gặp lỗi và stack trace.
-
----
 
 ## 7. HƯỚNG DẪN KIỂM TRA CÁC BIỆN PHÁP HARDENING BẢO MẬT
 

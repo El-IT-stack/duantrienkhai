@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Project Management DB",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "postgres_admin",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "project_management_db"
+    }
+  }
+}

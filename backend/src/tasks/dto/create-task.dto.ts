@@ -1,15 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsIn, IsUUID, IsDateString, IsInt, Min } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsIn, IsDateString, IsInt, Min } from 'class-validator';
+import { IsDbUUID } from '../../common/decorators/is-db-uuid.decorator';
 
 export class CreateTaskDto {
   @ApiPropertyOptional({ example: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', description: 'ID dự án chứa task này' })
   @IsOptional()
-  @IsUUID('4', { message: 'projectId phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'projectId phải là UUID hợp lệ' })
   projectId?: string;
 
   @ApiPropertyOptional({ example: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', description: 'ID dự án chứa task này' })
   @IsOptional()
-  @IsUUID('4', { message: 'project_id phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'project_id phải là UUID hợp lệ' })
   project_id?: string;
 
   @ApiProperty({ example: 'Thiết kế REST API xác thực JWT' })
@@ -34,12 +35,12 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({ example: '44444444-4444-4444-4444-444444444444' })
   @IsOptional()
-  @IsUUID('4', { message: 'assigneeId phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'assigneeId phải là UUID hợp lệ' })
   assigneeId?: string;
 
   @ApiPropertyOptional({ example: '44444444-4444-4444-4444-444444444444' })
   @IsOptional()
-  @IsUUID('4', { message: 'assignee_id phải là UUID hợp lệ' })
+  @IsDbUUID({ message: 'assignee_id phải là UUID hợp lệ' })
   assignee_id?: string;
 
   @ApiPropertyOptional({ example: '2026-04-15' })
